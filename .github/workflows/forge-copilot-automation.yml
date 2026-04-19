@@ -2,104 +2,36 @@ name: Forge Copilot Automation
 
 on:
   push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
-  workflow_dispatch:
-
-env:
-  NODE_VERSION: "20"
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    branches:
+      - main
 
 jobs:
-  setup-copilot:
-    name: Setup GitHub Copilot
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Check out code
+      uses: actions/checkout@v2
 
-      - name: Set up GitHub CLI
-        run: |
-          sudo apt update && sudo apt install -y gh
-          gh auth login --with-token <<< "${{ env.GITHUB_TOKEN }}"
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
 
-      - name: Enable GitHub Copilot
-        run: |
-          gh extension install github/gh-copilot
-          gh copilot enable
-          gh copilot status
+    - name: Install dependencies
+      run: |
+        npm install
 
-  configure-opencode:
-    name: Configure OpenCode
-    needs: setup-copilot
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Connect to Mistral AI API
+      run: |
+        echo "Connecting to Mistral AI API..."
+        # Add your connection logic here
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+    - name: GitHub Copilot Integration
+      run: |
+        echo "Setting up GitHub Copilot..."
+        # Additional integration steps for Copilot setup can be added here
 
-      - name: Install OpenCode
-        run: |
-          # Replace with actual OpenCode installation command
-          wget -O opencode-installer.sh https://example.com/opencode-installer.sh
-          chmod +x opencode-installer.sh
-          ./opencode-installer.sh
-
-      - name: Configure OpenCode with GitHub Copilot
-        run: |
-          # Replace with actual OpenCode CLI commands
-          opencode-cli config set provider github-copilot
-          opencode-cli config set api-key "${{ secrets.GITHUB_COPILOT_API_KEY }}"
-
-  setup-omniroute:
-    name: Setup OmniRoute
-    needs: configure-opencode
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install OmniRoute
-        run: npm install -g omniroute@3.5.3
-
-      - name: Configure OmniRoute
-        run: |
-          export INITIAL_PASSWORD="your_secure_password"
-          # Add your GitHub Copilot accounts to OmniRoute
-          omniroute &
-
-  automate-ai-models:
-    name: Automate AI Models
-    needs: setup-omniroute
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Fetch and Configure AI Models
-        run: |
-          # Fetch available models from GitHub Copilot API
-          COPILOT_MODELS=$(gh api /user/copilot/models --jq '.[].name')
-          for model in $COPILOT_MODELS; do
-            echo "Configuring model: $model"
-            opencode-cli model add "$model"
-          done
-
-      - name: Switch Models on Limit
-        run: |
-          # Use OmniRoute to switch models if limits are hit
-          # This is a conceptual example; replace with actual logic
-          if [ "$(gh copilot status | grep 'rate limit')" ]; then
-            echo "Switching to another model due to rate limit"
-            omniroute switch-model
-          fi
+    - name: Run application
+      run: |
+        npm start
